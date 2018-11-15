@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: API for Kudos Backend
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+    Function:
+        Timeout: 100
+
+Resources:
+
+    VoteSaveFunction:
+        Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+        Properties:
+            CodeUri: ./
+            Policies: AmazonDynamoDBReadOnlyAccess
+            Handler: app.lambda_handler
+            Runtime: python3.6
+            Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+                Variables:
+                    PARAM1: VALUE
+            Events:
+                VoteCheckApi:
+                    Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+                    Properties:
+                        Path: /vote/save
+                        Method: post
+
+    DynamoMovieTable:
+        Type: AWS::Serverless::SimpleTable # if you want to define a more complex table, use AWS::DynamoDB::Table
+        TableName: kudos_vote
+        PrimaryKey:
+            Name: ID
+            Type: String
+        ProvisionedThroughput:
+            ReadCapacityUnit: 5
+            WriteCapacityUnits: 5
+
+Outputs:
+
+    VoteCheckApi:
+      Description: "API Gateway endpoint URL for Prod stage for VoteCheck function"
+      Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/vote/check/"
+
+    VoteSaveApi:
+      Description: "API Gateway endpoint URL for Prod stage for VoteCheck function"
+      Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/vote/save/"

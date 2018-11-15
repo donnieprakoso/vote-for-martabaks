@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Resources for Vote-for-Martabaks
+Globals:
+  Api:
+    Cors:
+      AllowHeaders: '''content-type'''
+      AllowOrigin: '''*'''
+  Function:
+    Timeout: 100
+Resources:
+  PollCheckFunction:
+    Properties:
+      CodeUri: s3://repo.donnie.aws/d40f9e39aa33ff5cc3d65d8de62e6328
+      Environment:
+        Variables:
+          DB_VOTE_SCORE:
+            Ref: VoteDbScore
+      Events:
+        Post:
+          Properties:
+            Method: post
+            Path: /poll/check
+          Type: Api
+      Handler: app.lambda_handler
+      Policies:
+      - AmazonDynamoDBFullAccess
+      Runtime: python3.6
+    Type: AWS::Serverless::Function
+  PollCountFunction:
+    Properties:
+      CodeUri: s3://repo.donnie.aws/3eb5f8147bb2356b412c1102762ca3da
+      Environment:
+        Variables:
+          DB_VOTE_SCORE:
+            Ref: VoteDbScore
+      Events:
+        Post:
+          Properties:
+            Method: post
+            Path: /poll/count
+          Type: Api
+      Handler: app.lambda_handler
+      Policies:
+      - AmazonDynamoDBFullAccess
+      Runtime: python3.6
+    Type: AWS::Serverless::Function
+  PollSaveFunction:
+    Properties:
+      CodeUri: s3://repo.donnie.aws/b2c6dca29385300493cac50e1849ac1f
+      Environment:
+        Variables:
+          DB_VOTE_SCORE:
+            Ref: VoteDbScore
+      Events:
+        Post:
+          Properties:
+            Method: post
+            Path: /poll/save
+          Type: Api
+      Handler: app.lambda_handler
+      Policies:
+      - AmazonDynamoDBFullAccess
+      Runtime: python3.6
+    Type: AWS::Serverless::Function
+  VoteDbScore:
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: ID
+        AttributeType: S
+      - AttributeName: poll_ID
+        AttributeType: S
+      GlobalSecondaryIndexes:
+      - IndexName: poll_ID_index
+        KeySchema:
+        - AttributeName: poll_ID
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+      KeySchema:
+      - AttributeName: ID
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      TableName: vote_score
+    Type: AWS::DynamoDB::Table
+  WebBucket:
+    Properties:
+      AccessControl: PublicRead
+      BucketName: vote-for-martabak
+      WebsiteConfiguration:
+        ErrorDocument: index.html
+        IndexDocument: index.html
+    Type: AWS::S3::Bucket
+Transform: AWS::Serverless-2016-10-31

@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Resources for Vote-for-Martabaks
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+    Function:
+        Timeout: 100
+    Api:
+        Cors:
+            AllowOrigin: "'*'"
+            AllowHeaders: "'content-type'"
+    
+Resources:
+    VoteDbScore:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: vote_score
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+        AttributeDefinitions:
+          - AttributeName: ID
+            AttributeType: S
+          - AttributeName: poll_ID
+            AttributeType: S
+        KeySchema:
+          - AttributeName: ID
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: poll_ID_index
+            KeySchema:
+              - AttributeName: poll_ID
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+    PollCountFunction:
+        Type: AWS::Serverless::Function 
+        Properties:
+            CodeUri: poll_count/
+            Handler: app.lambda_handler
+            Runtime: python3.6
+            Policies:
+              - AmazonDynamoDBFullAccess
+            Environment: 
+                Variables:
+                    DB_VOTE_SCORE: !Ref VoteDbScore
+            Events:
+                Post:
+                    Type: Api 
+                    Properties:
+                        Path: /poll/count
+                        Method: post
+    PollCheckFunction:
+        Type: AWS::Serverless::Function 
+        Properties:
+            CodeUri: poll_check/
+            Handler: app.lambda_handler
+            Runtime: python3.6
+            Policies:
+              - AmazonDynamoDBFullAccess
+            Environment: 
+                Variables:
+                    DB_VOTE_SCORE: !Ref VoteDbScore
+            Events:
+                Post:
+                    Type: Api 
+                    Properties:
+                        Path: /poll/check
+                        Method: post
+    PollSaveFunction:
+        Type: AWS::Serverless::Function 
+        Properties:
+            CodeUri: poll_save/
+            Handler: app.lambda_handler
+            Runtime: python3.6
+            Policies:
+              - AmazonDynamoDBFullAccess
+            Environment: 
+                Variables:
+                    DB_VOTE_SCORE: !Ref VoteDbScore 
+            Events:
+                Post:
+                    Type: Api 
+                    Properties:
+                        Path: /poll/save
+                        Method: post
+    WebBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+          BucketName: vote-for-martabak
+          AccessControl: PublicRead
+          WebsiteConfiguration:
+            IndexDocument: index.html
+            ErrorDocument: index.html
+

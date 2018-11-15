@@ -1,0 +1,206 @@
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<title>Hello, Racer!</title>
+	<link rel="stylesheet" href="./assets/css/bulma.min.css">
+
+</head>
+<style>
+.bold{
+	font-weight: bold;
+}
+
+
+</style>
+<body class="background">
+	<h1></h1>
+	<nav class="navbar" role="navigation" aria-label="main navigation" style="background-color:black;">
+		<div class="navbar-brand">
+			<a class="navbar-item" href="/">
+				<img src="./assets/images/AWS_logo_RGB_REV.png" alt="" >
+			</a>
+
+			<button class="button navbar-burger">
+				<span></span>
+				<span></span>
+				<span></span>
+			</button>
+		</div>
+	</nav>
+
+	<div id="screen1" class="container" style="margin-top:30px;">
+
+		<div id="vote" class="columns">
+			<div class="column is-6">
+				<div class="columns">
+					<div class="column is-12 has-text-centered" style="">
+						<div class="title is-1">Martabak Telor</div>				
+					</div>
+				</div>
+
+				<div class="columns">
+					<div class="column is-12 has-text-centered" style="">
+						<figure class="image is-16by9">
+							<img src="/assets/images/martabak-telor.jpg">
+						</figure>
+						<small>Photo by </small>
+	<div>
+						<br/>
+						<button data-item-name="Martabak Telor" id="6ea438682b364afc964c3535a578c738" class="btn-item button is-info is-large">#timMartabakTelor</button>
+					</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="column is-6">
+				<div class="columns">
+					<div class="column is-12 has-text-centered" style="">
+						<div class="title is-1">Martabak Manis</div>		
+					</div>
+				</div>
+
+				<div class="columns">
+					<div class="column is-12 has-text-centered" style="">
+						<figure class="image is-16by9">
+							<img src="/assets/images/martabak-manis.jpg">
+						</figure>
+						<small>Photo by </small>
+					
+					<div>
+						<br/>
+						<button data-item-name="Martabak Manis" id="dfde5bf79445af83d31193df5c0aca11" class="btn-item button is-info is-large">#timMartabakManis</button>
+					</div>
+				</div>
+			</div>
+		</div>
+</div>
+	<div class="columns">
+
+<div id="result" style="display:none;" class="column is-4 is-offset-4 has-text-centered">
+<div class="title is-3">...dan hasilnya</div>
+<canvas id="myChart" width="400" height="400"></canvas>
+</div>
+
+		
+
+
+	</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/2.2.0/js.cookie.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.10.0/js/md5.min.js"></script>
+<script type="text/javascript">
+
+$(document).ready(function() {
+var poll_ID = "05cd350fea287faa5922181938d30851";
+var base_url = "https://fbgx5zxtrj.execute-api.ap-southeast-1.amazonaws.com/";
+
+		var fn_user_check = function(){
+			user_ID = Cookies.get("user_ID");
+			if(typeof user_ID == "undefined"){
+				var random_string = Math.random().toString(36).substring(10);
+				var hash = md5(random_string);
+				Cookies.set("user_ID", hash);
+			}
+		}
+
+		var fn_vote = function(e){
+			console.log(e);
+			e.preventDefault();	
+			var request = {};
+			request["poll_id"]=poll_ID;
+			request["user_id"]=Cookies.get("user_ID");
+			request["item_id"]=$("#"+e.currentTarget.id).data("item-name");
+			console.log(request);
+			$.ajax({
+				type: "post",
+				data: JSON.stringify(request),
+				url: base_url+"Prod/poll/save",	
+				contenttype: "application/json; charset=utf-8",
+				datatype: "json",
+				success: function(data){
+				},
+				failure: function(x,y,z) {
+					console.log(x,y,z);
+				},
+				complete: function(){
+					fn_count();
+				}
+			});		
+		}
+
+		var fn_count = function(){
+			var request = {};
+			request["poll_id"]=poll_ID;
+			console.log(request);
+			$.ajax({
+				type: "post",
+				data: JSON.stringify(request),
+				url: base_url+"Prod/poll/count",	
+				contenttype: "application/json; charset=utf-8",
+				datatype: "json",
+				success: function(data){
+					console.log(data);
+					$("#vote").css("display","none");
+					$("#result").css("display","inline");
+					fn_renderGraph(data);
+				},
+				failure: function(x,y,z) {
+					console.log(x,y,z);
+				}
+			});		
+		}
+
+   		var fn_randomString = function(){
+   			return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+   		}
+
+
+
+		var fn_renderGraph = function(results){
+			var data = results["votes"];
+			console.log(data);
+			dataChart = [];
+			labelChart = [];
+			for (var x in data){
+				dataChart.push(data[x]);
+				labelChart.push(x);
+			}
+			console.log(dataChart);
+			console.log(labelChart);
+			var ctx = $("#myChart");
+			chartInformation = {
+				datasets: [{
+					data: dataChart,
+					backgroundColor:[
+						"#ff6384",
+						"#cc65fe"
+					]
+				}],
+
+				labels: labelChart
+			};
+			options = {};
+			var myPieChart = new Chart(ctx,{
+    				type: 'pie',
+    				data: chartInformation,
+    				options: options
+			});
+			myPieChart.update();
+		}
+
+		fn_user_check();	
+		$(".btn-item").on('click', fn_vote);	
+});
+Cookies.remove("user_ID");
+
+</script>
+
+
+
+</body>
+
+</html>
